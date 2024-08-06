@@ -13,24 +13,28 @@
 # class Notas:
 #     def __init__(self): 
 #         self.notas = {}
-        
-
-#  def agregar_notas(self, id, nombre, telefono, correo, fecha_nacimiento, direccion, genero):
-#         self.notas[id] = {
-#             'nombre': nombre,
-#             'telefono': telefono,
-#             'correo': correo,
-#             'fecha_nacimiento': fecha_nacimiento,
-#             'direccion': direccion,
-#             'genero': genero
-#         }
 
 
+def agregar_notas(self, idNota, idEstudiante, idAsigatura, calificacion):
+    self.notas[idNota] = {
+        'idEstudiante': idEstudiante,
+        'idAsigatura': idAsigatura,
+        'calificacion': calificacion
+}
 
-    
-#     def eliminar_notas(self, id):
-#         if id in self.notas:
-#             del self.notas[id]
+def modificar_nota(self, idNota, idEstudiante=None, idAsigatura=None, calificacion=None):
+    if id in self.notas:
+        if idEstudiante is not None:
+            self.notas[idNota]['idEstudiante'] = idEstudiante
+        if idAsigatura is not None:
+            self.notas[idNota]['idAsigatura'] = idAsigatura
+        if calificacion is not None:
+            self.notas[idNota]['calificacion'] = calificacion
 
-#     def obtener_notas(self):
-#         return self.notas
+
+def eliminar_notas(self, idNota):
+    if idNota in self.notas:
+        del self.notas[idNota]
+
+def obtener_notas(self):
+    return self.notas
