@@ -1,11 +1,12 @@
 #from Modelos.asignaturas  import asignaturas
-from Controladores.controlador_asignaturas  import controlador_asignaturas
+from Controladores.controlador_asignaturas  import ControladorAsignaturas
 import tkinter as tk
 from tkinter import ttk
+import re
 
 class InterfazAsignatura:
     def __init__(self, parent):
-        self.controlador = controlador_asignaturas()
+        self.controlador = ControladorAsignaturas()
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill=tk.BOTH, expand=True)
 
@@ -28,9 +29,9 @@ class InterfazAsignatura:
         datos_title.grid(row=0, column=0, columnspan=2, pady=20)
 
         # Campos de entrada
-        self.crear_campo(datos_frame, "ID", 1)
-        self.crear_campo(datos_frame, "Nombre", 2)
-        self.crear_campo(datos_frame, "Descripción", 3, is_text=True)
+        self.txt_id = self.crear_campo(datos_frame, "ID", 1)
+        self.txt_nombre = self.crear_campo(datos_frame, "Nombre", 2)
+        self.txt_descripcion = self.crear_campo(datos_frame, "Descripción", 3, is_text=True)
 
         # Botones
         btn_frame = tk.Frame(datos_frame, bd=4, relief=tk.RIDGE, bg="dark grey")
@@ -40,6 +41,8 @@ class InterfazAsignatura:
         for index, button_text in enumerate(button_texts):
             boton = tk.Button(btn_frame, text=button_text, width=7, font=("Arial", 14))
             boton.grid(row=0, column=index, padx=10, pady=10)
+            setattr(self, f"boton_{button_text.lower()}", boton)
+
 
         # Configuración de expansión
         datos_frame.grid_rowconfigure(4, weight=1)
@@ -52,18 +55,18 @@ class InterfazAsignatura:
         buscar_label = tk.Label(resultados_frame, text="Buscar por: ", bg="lavender", fg="brown", font=("Arial", 18, "bold"))
         buscar_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
 
-        combo_buscar = ttk.Combobox(resultados_frame, width=10, font=("Arial", 15), state='readonly')
-        combo_buscar['values'] = ("ID", "Nombre")
-        combo_buscar.grid(row=0, column=1, padx=20, pady=10)
+        self.combo_buscar = ttk.Combobox(resultados_frame, width=10, font=("Arial", 15), state='readonly')
+        self.combo_buscar['values'] = ("ID", "Nombre")
+        self.combo_buscar.grid(row=0, column=1, padx=20, pady=10)
 
-        buscar_entry = tk.Entry(resultados_frame, width=20, font=("Arial", 11), bd=5, relief=tk.GROOVE)
-        buscar_entry.grid(row=0, column=2, pady=10, padx=20, sticky="w")
+        self.buscar_entry = tk.Entry(resultados_frame, width=20, font=("Arial", 11), bd=5, relief=tk.GROOVE)
+        self.buscar_entry.grid(row=0, column=2, pady=10, padx=20, sticky="w")
 
-        buscar_btn = tk.Button(resultados_frame, text="Buscar", width=7, font=("Arial", 14))
-        buscar_btn.grid(row=0, column=3, padx=10, pady=10)
+        self.buscar_btn = tk.Button(resultados_frame, text="Buscar", width=7, font=("Arial", 14))
+        self.buscar_btn.grid(row=0, column=3, padx=10, pady=10)
 
-        mostrar_btn = tk.Button(resultados_frame, text="Mostrar todo", width=10, font=("Arial", 14))
-        mostrar_btn.grid(row=0, column=4, padx=10, pady=10)
+        self.mostrar_btn = tk.Button(resultados_frame, text="Mostrar todo", width=10, font=("Arial", 14))
+        self.mostrar_btn.grid(row=0, column=4, padx=10, pady=10)
 
         tabla_frame = tk.Frame(resultados_frame, bd=4, relief=tk.RIDGE, bg="lavender")
         tabla_frame.grid(row=1, column=0, columnspan=5, pady=10, padx=10, sticky="nsew")
@@ -71,23 +74,23 @@ class InterfazAsignatura:
         scroll_x = tk.Scrollbar(tabla_frame, orient=tk.HORIZONTAL)
         scroll_y = tk.Scrollbar(tabla_frame, orient=tk.VERTICAL)
 
-        tabla = ttk.Treeview(tabla_frame, columns=("ID", "Nombre", "Descripción"), xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+        self.tabla = ttk.Treeview(tabla_frame, columns=("ID", "Nombre", "Descripción"), xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
         scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
         scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-        scroll_x.config(command=tabla.xview)
-        scroll_y.config(command=tabla.yview)
+        scroll_x.config(command=self.tabla.xview)
+        scroll_y.config(command=self.tabla.yview)
 
-        tabla.heading("ID", text="ID")
-        tabla.heading("Nombre", text="Nombre")
-        tabla.heading("Descripción", text="Descripción")
-        tabla.pack(fill=tk.BOTH, expand=1)
+        self.tabla.heading("ID", text="ID")
+        self.tabla.heading("Nombre", text="Nombre")
+        self.tabla.heading("Descripción", text="Descripción")
+        self.tabla.pack(fill=tk.BOTH, expand=1)
 
-        tabla['show'] = 'headings'
-        tabla.column("ID", width=100)
-        tabla.column("Nombre", width=100)
-        tabla.column("Descripción", width=200)
+        self.tabla['show'] = 'headings'
+        self.tabla.column("ID", width=100)
+        self.tabla.column("Nombre", width=100)
+        self.tabla.column("Descripción", width=200)
 
-        setattr(self, "tabla_asignatura", tabla)
+        setattr(self, "tabla_asignatura", self.tabla)
 
         # Configuración de expansión
         resultados_frame.grid_rowconfigure(1, weight=1)
@@ -103,35 +106,94 @@ class InterfazAsignatura:
             entry = tk.Entry(frame, font=("Arial", 15), bd=5, relief=tk.GROOVE)
 
         entry.grid(row=fila, column=1, pady=10, padx=30, sticky="w")
-        setattr(self, f"txt_{texto.lower().replace(' ', '_')}", entry)
-        
+        return entry
+            
+    def validar_campos_asignatura(self):
+        """Validar que los campos no estén vacíos y que los datos sean correctos."""
+        errors = []
+
+        # Validar ID
+        id = self.txt_id.get()
+        if not id:
+            errors.append("El campo ID no puede estar vacío.")
+
+        # Validar Nombre
+        nombre = self.txt_nombre.get()
+        if not nombre:
+            errors.append("El campo Nombre no puede estar vacío.")
+
+        # Validar Descripción
+        descripcion = self.txt_descripcion.get("1.0", tk.END).strip()
+        if not descripcion:
+            errors.append("El campo Descripción no puede estar vacío.")
+
+        if errors:
+            self.mostrar_errores(errors)
+            return False
+
+        return True
+    
+    def mostrar_errores(self, errores):
+        """Mostrar mensajes de error en una ventana emergente."""
+        error_msg = "\n".join(errores)
+        tk.messagebox.showerror("Errores de validación", error_msg)
+
     def agregar_asignatura(self):
-        self.controlador.agregar_asignatura()
+        if self.validar_campos_asignatura():
+            id = self.txt_id.get()
+            nombre = self.txt_nombre.get()
+            descripcion = self.txt_descripcion.get("1.0", tk.END).strip()
+
+            self.controlador.agregar_asignatura(
+                id, nombre, descripcion
+            )
+            self.mostrar_todas_asignaturas()
 
     def modificar_asignatura(self):
-        self.controlador.modificar_asignatura()
+        if self.validar_campos_asignatura():
+            id = self.txt_id.get()
+            nombre = self.txt_nombre.get()
+            descripcion = self.txt_descripcion.get("1.0", tk.END).strip()
+
+            self.controlador.modificar_asignatura(
+                id, nombre, descripcion
+            )
+            self.mostrar_todas_asignaturas()
 
     def eliminar_asignatura(self):
-        self.controlador.eliminar_asignatura()
+        id = self.txt_id.get()
+        if not id:
+            tk.messagebox.showwarning("Advertencia", "El campo ID no puede estar vacío.")
+            return
+        self.controlador.eliminar_asignatura(id)
+        self.mostrar_todas_asignaturas()
 
-    def buscar_asignatura(self):
-        self.controlador.buscar_asignatura()
+    def buscar_asignaturas(self):
+        criterio = self.combo_buscar.get()
+        valor = self.buscar_entry.get()
+        if not valor:
+            tk.messagebox.showwarning("Advertencia", "El campo de búsqueda no puede estar vacío.")
+            return
+        resultados = self.controlador.obtener_asignaturas()
+        resultados_filtrados = {k: v for k, v in resultados.items() if v.get(criterio.lower()) == valor}
+        self.mostrar_resultados(resultados_filtrados)
 
-    def mostrar_todos_asignaturas(self):
-        self.controlador.mostrar_todos_asignaturas()
-
-    def limpiar_campos(self):
-        self.txt_id.delete(0, tk.END)
-        self.txt_nombre.delete(0, tk.END)
-        self.txt_descripcion.delete("1.0", tk.END)
+    def mostrar_todas_asignaturas(self):
+        resultados = self.controlador.obtener_asignaturas()
+        self.mostrar_resultados(resultados)
 
     def mostrar_resultados(self, resultados):
         for row in self.tabla.get_children():
             self.tabla.delete(row)
 
-        for asignatura in resultados:
+        for id, datos in resultados.items():
             self.tabla.insert("", tk.END, values=(
-                asignatura.id,
-                asignatura.nombre,
-                asignatura.descripcion
+                id,
+                datos['nombre'],
+                datos['descripcion']
             ))
+
+    def limpiar_campos(self):
+        self.txt_id.delete(0, tk.END)
+        self.txt_nombre.delete(0, tk.END)
+        self.txt_descripcion.delete("1.0", tk.END)

@@ -10,28 +10,26 @@
 
 
 
-import tkinter as tk
-from tkinter import ttk
-class asignatura:
-    def __init__(self, id, nombre, descripcion):
+class Asignaturas:
+    def __init__(self):
+        self.asignaturas = {}  # {id: {'nombre': '', 'descripcion': ''}}
 
-        self.id = id
-        self.nombre = nombre
-        self.descripcion = descripcion
-
-    def __str__(self):
-
-        return f"Asignatura {self.id}: {self.nombre} - {self.descripcion}"
-
-    def to_dict(self):
-
-        return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "descripcion": self.descripcion
+    def agregar_asignatura(self, id, nombre, descripcion):
+        self.asignaturas[id] = {
+            'nombre': nombre,
+            'descripcion': descripcion
         }
 
-    @classmethod
-    def from_dict(cls, data):
+    def modificar_asignatura(self, id, nombre=None, descripcion=None):
+        if id in self.asignaturas:
+            if nombre is not None:
+                self.asignaturas[id]['nombre'] = nombre
+            if descripcion is not None:
+                self.asignaturas[id]['descripcion'] = descripcion
 
-        return cls(data["id"], data["nombre"], data["descripcion"])
+    def eliminar_asignatura(self, id):
+        if id in self.asignaturas:
+            del self.asignaturas[id]
+
+    def obtener_asignaturas(self):
+        return self.asignaturas
