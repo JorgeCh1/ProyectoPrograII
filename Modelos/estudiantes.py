@@ -1,5 +1,15 @@
 # modelo/estudiantes.py
 
+#Nombre del programa: Proyecto Final Programacion II
+#Fecha de creación:
+#Versión de Python en ejecución:
+#Nombre del equipo de programación: Team Rapidito
+#Nombre del líder del equipo: Chavez Aviles Jorge 
+#Nombre de los integrantes:   Chavez Aviles Jorge 
+                            # Soto Saborio Gerardo
+                            # Rodriguez Marin Yulieth 
+                            # Romero Meza Norman
+
 class Estudiantes:
     def __init__(self):
         self.estudiantes = {}  # {id: {'nombre': '', 'telefono': '', 'correo': '', 'fecha_nacimiento': '', 'direccion': '', 'genero': ''}}

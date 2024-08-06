@@ -1,13 +1,34 @@
+#Nombre del programa: Proyecto Final Programacion II
+#Fecha de creación:
+#Versión de Python en ejecución:
+#Nombre del equipo de programación: Team Rapidito
+#Nombre del líder del equipo: Chavez Aviles Jorge 
+#Nombre de los integrantes:   Chavez Aviles Jorge 
+                            # Soto Saborio Gerardo
+                            # Rodriguez Marin Yulieth 
+                            # Romero Meza Norman
+
 import tkinter as tk
 from tkinter import ttk
+# from Controladores.controlador_notas import ControladorNotas
 
 class InterfazNota:
     def __init__(self, parent):
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill=tk.BOTH, expand=True)
+        
+        # self.controlador = ControladorNotas()
 
         self.create_data_panel()
         self.create_result_panel()
+
+    # Asociar eventos de botones
+        self.boton_agregar.config(command=self.agregar_nota)
+        self.boton_modificar.config(command=self.modificar_estudiante)
+        self.boton_eliminar.config(command=self.eliminar_estudiante)
+        self.boton_limpiar.config(command=self.limpiar_campos)
+        self.boton_buscar.config(command=self.buscar_estudiantes)
+        self.boton_mostrar_todo.config(command=self.mostrar_todos_estudiantes)
 
     def create_data_panel(self):
         datos_frame = tk.Frame(self.frame, bd=4, relief=tk.RIDGE, bg="lightgrey")
@@ -19,7 +40,8 @@ class InterfazNota:
         # Campos de entrada
         self.crear_campo(datos_frame, "ID Estudiante", 1)
         self.crear_campo(datos_frame, "ID Asignatura", 2)
-        self.crear_campo(datos_frame, "Nota", 3)
+        self.crear_campo(datos_frame, "ID Nota", 3)
+        self.crear_campo(datos_frame, "Nota", 4)
 
         # Botones
         btn_frame = tk.Frame(datos_frame, bd=4, relief=tk.RIDGE, bg="dark grey")
@@ -68,12 +90,14 @@ class InterfazNota:
 
         tabla.heading("ID Estudiante", text="ID Estudiante")
         tabla.heading("ID Asignatura", text="ID Asignatura")
+        tabla.heading("ID Nota", text="ID Nota")
         tabla.heading("Nota", text="Nota")
         tabla.pack(fill=tk.BOTH, expand=1)
 
         tabla['show'] = 'headings'
         tabla.column("ID Estudiante", width=150)
         tabla.column("ID Asignatura", width=150)
+        tabla.column("ID Nota", width=100)
         tabla.column("Nota", width=100)
 
         setattr(self, "tabla_nota", tabla)
@@ -90,3 +114,6 @@ class InterfazNota:
         entry.grid(row=fila, column=1, pady=10, padx=30, sticky="w")
         setattr(self, f"txt_{texto.lower().replace(' ', '_')}", entry)
 
+#  ventana = tk.Tk()
+#     app = FrmPrincipal(ventana)
+#     ventana.mainloop()

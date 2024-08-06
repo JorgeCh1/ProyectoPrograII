@@ -1,13 +1,24 @@
+#from Modelos.asignaturas  import asignaturas
+from Controladores.controlador_asignaturas  import controlador_asignaturas
 import tkinter as tk
 from tkinter import ttk
 
 class InterfazAsignatura:
     def __init__(self, parent):
+        self.controlador = controlador_asignaturas()
         self.frame = tk.Frame(parent, bg="white")
         self.frame.pack(fill=tk.BOTH, expand=True)
 
         self.create_data_panel()
         self.create_result_panel()
+        
+        # Asociar eventos de botones
+        self.boton_agregar.config(command=self.agregar_asignatura)
+        self.boton_modificar.config(command=self.modificar_asignatura)
+        self.boton_eliminar.config(command=self.eliminar_asignatura)
+        self.boton_limpiar.config(command=self.limpiar_campos)
+        self.boton_buscar.config(command=self.buscar_asignatura)
+        self.boton_mostrar_todo.config(command=self.mostrar_todos_asignaturas)
 
     def create_data_panel(self):
         datos_frame = tk.Frame(self.frame, bd=4, relief=tk.RIDGE, bg="lightgrey")
@@ -93,4 +104,34 @@ class InterfazAsignatura:
 
         entry.grid(row=fila, column=1, pady=10, padx=30, sticky="w")
         setattr(self, f"txt_{texto.lower().replace(' ', '_')}", entry)
+        
+    def agregar_asignatura(self):
+        self.controlador.agregar_asignatura()
 
+    def modificar_asignatura(self):
+        self.controlador.modificar_asignatura()
+
+    def eliminar_asignatura(self):
+        self.controlador.eliminar_asignatura()
+
+    def buscar_asignatura(self):
+        self.controlador.buscar_asignatura()
+
+    def mostrar_todos_asignaturas(self):
+        self.controlador.mostrar_todos_asignaturas()
+
+    def limpiar_campos(self):
+        self.txt_id.delete(0, tk.END)
+        self.txt_nombre.delete(0, tk.END)
+        self.txt_descripcion.delete("1.0", tk.END)
+
+    def mostrar_resultados(self, resultados):
+        for row in self.tabla.get_children():
+            self.tabla.delete(row)
+
+        for asignatura in resultados:
+            self.tabla.insert("", tk.END, values=(
+                asignatura.id,
+                asignatura.nombre,
+                asignatura.descripcion
+            ))
