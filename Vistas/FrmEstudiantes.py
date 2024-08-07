@@ -11,6 +11,7 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+from tkcalendar import DateEntry
 from Controladores.controlador_estudiantes import ControladorEstudiantes
 import re
 
@@ -31,6 +32,12 @@ class InterfazEstudiante:
         self.boton_buscar.config(command=self.buscar_estudiantes)
         self.boton_mostrar_todo.config(command=self.mostrar_todos_estudiantes)
 
+        # Asignar evento de selección de la tabla
+        self.tabla.bind("<ButtonRelease-1>", self.seleccionar_fila)
+        
+        # Cargar todos los estudiantes al iniciar la interfaz
+        self.mostrar_todos_estudiantes()
+
     def create_data_panel(self):
         datos_frame = tk.Frame(self.frame, bd=4, relief=tk.RIDGE, bg="lightgrey")
         datos_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
@@ -38,12 +45,12 @@ class InterfazEstudiante:
         datos_title = tk.Label(datos_frame, text="Control de Estudiantes", bg="lavender", fg="brown", font=("Arial", 20, "bold"))
         datos_title.grid(row=0, column=0, columnspan=2, pady=20)
 
-        # Campos de entrada
-        self.txt_id = self.crear_campo(datos_frame, "ID", 1)
+        # Campos de entrada (sin ID)
+        self.txt_id = self.crear_campo(datos_frame, "ID", 1, is_disabled=True)  # ID se desactiva ya que es autoincremental
         self.txt_nombre = self.crear_campo(datos_frame, "Nombre", 2)
         self.txt_telefono = self.crear_campo(datos_frame, "Teléfono", 3)
         self.txt_correo = self.crear_campo(datos_frame, "Correo", 4)
-        self.txt_fecha_de_nacimiento = self.crear_campo(datos_frame, "Fecha de nacimiento", 5)
+        self.txt_fecha_de_nacimiento = self.crear_campo(datos_frame, "Fecha de nacimiento", 5, is_date=True)
         self.txt_direccion = self.crear_campo(datos_frame, "Dirección", 6, is_text=True)
         self.txt_genero = self.crear_campo(datos_frame, "Género", 7, is_combobox=True)
 
@@ -53,13 +60,10 @@ class InterfazEstudiante:
 
         button_texts = ["Agregar", "Modificar", "Eliminar", "Limpiar"]
         for index, button_text in enumerate(button_texts):
-            boton = tk.Button(btn_frame, text=button_text, width=7, font=("Arial", 14))
-            boton.grid(row=0, column=index, padx=10, pady=10)
-            setattr(self, f"boton_{button_text.lower()}", boton)
+            boton = tk.Button(btn_frame, text=button_text, width=7, font=("Arial", 12, "bold"), bd=3, cursor="hand2")
+            boton.grid(row=0, column=index, padx=5, pady=5)
+            setattr(self, f'boton_{button_text.lower()}', boton)
 
-        # Configuración de expansión
-        datos_frame.grid_rowconfigure(8, weight=1)
-        datos_frame.grid_columnconfigure(1, weight=1)
 
     def create_result_panel(self):
         resultados_frame = tk.Frame(self.frame, bd=4, relief=tk.RIDGE, bg="navy")
@@ -69,7 +73,7 @@ class InterfazEstudiante:
         buscar_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
 
         self.combo_buscar = ttk.Combobox(resultados_frame, width=10, font=("Arial", 15), state='readonly')
-        self.combo_buscar['values'] = ("ID", "Nombre")
+        self.combo_buscar['values'] = ("ID", "Nombre")  # Búsqueda por ID y por nombre
         self.combo_buscar.grid(row=0, column=1, padx=20, pady=10)
 
         self.buscar_entry = tk.Entry(resultados_frame, width=20, font=("Arial", 11), bd=5, relief=tk.GROOVE)
@@ -115,152 +119,152 @@ class InterfazEstudiante:
         resultados_frame.grid_rowconfigure(1, weight=1)
         resultados_frame.grid_columnconfigure(4, weight=1)
 
-    def crear_campo(self, frame, texto, fila, is_text=False, is_combobox=False):
-        label = tk.Label(frame, text=f"{texto}: ", bg="lavender", fg="brown", font=("Arial", 18, "bold"))
-        label.grid(row=fila, column=0, pady=10, sticky="w")
-
-        if is_text:
-            entry = tk.Text(frame, width=30, height=4, font=("Arial", 10))
-        elif is_combobox:
-            entry = ttk.Combobox(frame, width=27, font=("Arial", 15), state='readonly')
-            entry['values'] = ("Masculino", "Femenino", "Otro")
+    def crear_campo(self, parent, label_text, fila, is_disabled=False, is_text=False, is_combobox=False, is_date=False):
+        label = tk.Label(parent, text=label_text, bg="lightgrey", fg="black", font=("Arial", 14, "bold"))
+        label.grid(row=fila, column=0, pady=5, padx=10, sticky="w")
+        
+        if is_combobox:
+            field = ttk.Combobox(parent, font=("Arial", 13), state="readonly")
+            field['values'] = ("Masculino", "Femenino", "Otro")
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        elif is_text:
+            field = tk.Text(parent, height=4, width=25, font=("Arial", 13))
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        elif is_date:
+            field = DateEntry(parent, font=("Arial", 13), date_pattern="yyyy-mm-dd")
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
         else:
-            entry = tk.Entry(frame, font=("Arial", 15), bd=5, relief=tk.GROOVE)
-
-        entry.grid(row=fila, column=1, pady=10, padx=30, sticky="w")
-        return entry
+            field = tk.Entry(parent, font=("Arial", 13))
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+            if is_disabled:
+                field.config(state='disabled')
+                
+        return field
     
-    def validar_campos(self):
-        """Validar que los campos no estén vacíos y que los datos sean correctos."""
-        errors = []
-
-        # Validar ID
-        id = self.txt_id.get()
-        if not id:
-            errors.append("El campo ID no puede estar vacío.")
-
-        # Validar Nombre
-        nombre = self.txt_nombre.get()
-        if not nombre:
-            errors.append("El campo Nombre no puede estar vacío.")
-
-        # Validar Teléfono
-        telefono = self.txt_telefono.get()
-        if not telefono:
-            errors.append("El campo Teléfono no puede estar vacío.")
-
-        # Validar Correo
-        correo = self.txt_correo.get()
-        if not correo:
-            errors.append("El campo Correo no puede estar vacío.")
-        elif not self.validar_email(correo):
-            errors.append("El correo electrónico no tiene un formato válido.")
-
-        # Validar Fecha de Nacimiento
-        fecha_nacimiento = self.txt_fecha_de_nacimiento.get()
-        if not fecha_nacimiento:
-            errors.append("El campo Fecha de nacimiento no puede estar vacío.")
-
-        # Validar Dirección
-        direccion = self.txt_direccion.get("1.0", tk.END).strip()
-        if not direccion:
-            errors.append("El campo Dirección no puede estar vacío.")
-
-        # Validar Género
-        genero = self.txt_genero.get()
-        if not genero:
-            errors.append("El campo Género no puede estar vacío.")
-
-        if errors:
-            self.mostrar_errores(errors)
-            return False
-
-        return True
-
-    def validar_email(self, email):
-        """Validar el formato del correo electrónico."""
-        import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(email_regex, email) is not None
-
-    def mostrar_errores(self, errores):
-        """Mostrar mensajes de error en una ventana emergente."""
-        error_msg = "\n".join(errores)
-        tk.messagebox.showerror("Errores de validación", error_msg)
-
+    def crear_campo(self, parent, label_text, fila, is_disabled=False, is_text=False, is_combobox=False, is_date=False):
+        label = tk.Label(parent, text=label_text, bg="lightgrey", fg="black", font=("Arial", 14, "bold"))
+        label.grid(row=fila, column=0, pady=5, padx=10, sticky="w")
+        
+        if is_combobox:
+            field = ttk.Combobox(parent, font=("Arial", 13), state="readonly")
+            field['values'] = ("Masculino", "Femenino", "Otro")
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        elif is_text:
+            field = tk.Text(parent, height=4, width=25, font=("Arial", 13))
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        elif is_date:
+            field = DateEntry(parent, font=("Arial", 13), date_pattern="yyyy-mm-dd")
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        else:
+            field = tk.Entry(parent, font=("Arial", 13))
+            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+            if is_disabled:
+                field.config(state='disabled')
+                
+        return field
+    
     def agregar_estudiante(self):
-        if self.validar_campos():
-            id = self.txt_id.get()
-            nombre = self.txt_nombre.get()
-            telefono = self.txt_telefono.get()
-            correo = self.txt_correo.get()
-            fecha_nacimiento = self.txt_fecha_de_nacimiento.get()
-            direccion = self.txt_direccion.get("1.0", tk.END).strip()
-            genero = self.txt_genero.get()
-
-            self.controlador.agregar_estudiante(
-                id, nombre, telefono, correo, fecha_nacimiento, direccion, genero
-            )
+        datos = self.obtener_datos_entrada()
+        if datos:
+            self.controlador.agregar_estudiante(*datos)
             self.mostrar_todos_estudiantes()
+            self.limpiar_campos()
 
     def modificar_estudiante(self):
-        if self.validar_campos():
-            id = self.txt_id.get()
-            nombre = self.txt_nombre.get()
-            telefono = self.txt_telefono.get()
-            correo = self.txt_correo.get()
-            fecha_nacimiento = self.txt_fecha_de_nacimiento.get()
-            direccion = self.txt_direccion.get("1.0", tk.END).strip()
-            genero = self.txt_genero.get()
-
-            self.controlador.modificar_estudiante(
-                id, nombre, telefono, correo, fecha_nacimiento, direccion, genero
-            )
-            self.mostrar_todos_estudiantes()
+        id_estudiante = self.txt_id.get()
+        if id_estudiante:
+            datos = self.obtener_datos_entrada()
+            if datos:
+                self.controlador.modificar_estudiante(id_estudiante, *datos)
+                self.mostrar_todos_estudiantes()
+                self.limpiar_campos()
+        else:
+            messagebox.showerror("Error", "Seleccione un estudiante para modificar")
 
     def eliminar_estudiante(self):
-        id = self.txt_id.get()
-        if not id:
-            tk.messagebox.showwarning("Advertencia", "El campo ID no puede estar vacío.")
-            return
-        self.controlador.eliminar_estudiante(id)
-        self.mostrar_todos_estudiantes()
+        id_estudiante = self.txt_id.get()
+        if id_estudiante:
+            self.controlador.eliminar_estudiante(id_estudiante)
+            self.mostrar_todos_estudiantes()
+            self.limpiar_campos()
+        else:
+            messagebox.showerror("Error", "Seleccione un estudiante para eliminar")
 
     def buscar_estudiantes(self):
-        criterio = self.combo_buscar.get()
-        valor = self.buscar_entry.get()
-        if not valor:
-            tk.messagebox.showwarning("Advertencia", "El campo de búsqueda no puede estar vacío.")
-            return
-        resultados = self.controlador.obtener_estudiantes()
-        resultados_filtrados = {k: v for k, v in resultados.items() if v.get(criterio.lower()) == valor}
-        self.mostrar_resultados(resultados_filtrados)
+        campo_busqueda = self.combo_buscar.get()
+        valor_busqueda = self.buscar_entry.get()
+
+        if campo_busqueda and valor_busqueda:
+            if campo_busqueda == "ID":
+                estudiante = self.controlador.obtener_estudiante_por_id(valor_busqueda)
+                if estudiante:
+                    self.mostrar_resultados({valor_busqueda: estudiante})
+                else:
+                    self.tabla.delete(*self.tabla.get_children())  # Limpiar tabla si no se encuentra ningún resultado
+                    messagebox.showinfo("Información", "No se encontró ningún estudiante con ese ID")
+            elif campo_busqueda == "Nombre":
+                estudiantes = self.controlador.obtener_estudiantes_por_nombre(valor_busqueda)
+                self.mostrar_resultados(estudiantes)
+        else:
+            messagebox.showwarning("Advertencia", "Seleccione un criterio de búsqueda y proporcione un valor")
 
     def mostrar_todos_estudiantes(self):
-        resultados = self.controlador.obtener_estudiantes()
-        self.mostrar_resultados(resultados)
-
-    def mostrar_resultados(self, resultados):
-        for row in self.tabla.get_children():
-            self.tabla.delete(row)
-
-        for id, datos in resultados.items():
-            self.tabla.insert("", tk.END, values=(
-                id,
-                datos['nombre'],
-                datos['telefono'],
-                datos['correo'],
-                datos['fecha_nacimiento'],
-                datos['direccion'],
-                datos['genero']
-            ))
+        estudiantes = self.controlador.obtener_estudiantes()
+        self.mostrar_resultados(estudiantes)
 
     def limpiar_campos(self):
+        self.txt_id.config(state='normal')
         self.txt_id.delete(0, tk.END)
+        self.txt_id.config(state='disabled')
         self.txt_nombre.delete(0, tk.END)
         self.txt_telefono.delete(0, tk.END)
         self.txt_correo.delete(0, tk.END)
         self.txt_fecha_de_nacimiento.delete(0, tk.END)
-        self.txt_direccion.delete("1.0", tk.END)
-        self.txt_genero.set("")
+        self.txt_direccion.delete('1.0', tk.END)
+        self.txt_genero.set('')
 
+    def obtener_datos_entrada(self):
+        nombre = self.txt_nombre.get()
+        telefono = self.txt_telefono.get()
+        correo = self.txt_correo.get()
+        fecha_nacimiento = self.txt_fecha_de_nacimiento.get()
+        direccion = self.txt_direccion.get('1.0', tk.END).strip()
+        genero = self.txt_genero.get()
+
+        if not nombre or not telefono or not correo or not fecha_nacimiento or not direccion or not genero:
+            messagebox.showwarning("Advertencia", "Todos los campos son obligatorios")
+            return None
+
+        if not re.match(r'^\S+@\S+\.\S+$', correo):
+            messagebox.showerror("Error", "Correo inválido")
+            return None
+
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', fecha_nacimiento):
+            messagebox.showerror("Error", "Fecha de nacimiento inválida (use formato YYYY-MM-DD)")
+            return None
+
+        return nombre, telefono, correo, fecha_nacimiento, direccion, genero
+
+    def mostrar_resultados(self, estudiantes):
+        self.tabla.delete(*self.tabla.get_children())
+        for id_estudiante, datos in estudiantes.items():
+            self.tabla.insert("", tk.END, values=(id_estudiante, datos['nombre'], datos['telefono'], datos['correo'], datos['fecha_nacimiento'], datos['direccion'], datos['genero']))
+
+    def seleccionar_fila(self, event):
+        item = self.tabla.selection()[0]
+        datos = self.tabla.item(item, 'values')
+        self.txt_id.config(state='normal')
+        self.txt_id.delete(0, tk.END)
+        self.txt_id.insert(0, datos[0])
+        self.txt_id.config(state='disabled')
+        self.txt_nombre.delete(0, tk.END)
+        self.txt_nombre.insert(0, datos[1])
+        self.txt_telefono.delete(0, tk.END)
+        self.txt_telefono.insert(0, datos[2])
+        self.txt_correo.delete(0, tk.END)
+        self.txt_correo.insert(0, datos[3])
+        self.txt_fecha_de_nacimiento.delete(0, tk.END)
+        self.txt_fecha_de_nacimiento.insert(0, datos[4])
+        self.txt_direccion.delete('1.0', tk.END)
+        self.txt_direccion.insert('1.0', datos[5])
+        self.txt_genero.set(datos[6])
