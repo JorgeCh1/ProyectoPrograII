@@ -9,47 +9,57 @@
                             # Romero Meza Norman
 
 
-# Controladores/controlador_notas.py
 from Modelos.notas import Notas
 from Modelos.estudiantes import Estudiantes
 from Modelos.asignaturas import Asignaturas
 
 class ControladorNotas:
     def __init__(self):
-        self.notas_modelo = Notas()
-        self.asignaturas_modelo = Asignaturas()
-        self.estudiantes_modelo = Estudiantes()
+        self.modelo_notas = Notas()
+        self.modelo_estudiantes = Estudiantes()
+        self.modelo_asignaturas = Asignaturas()
 
-    def agregar_nota(self, idNota, idEstudiante, idAsignatura, calificacion):
-        if idEstudiante not in self.estudiantes_modelo.obtener_estudiantes():
-            return f"Error: Estudiante con id {idEstudiante} no existe."
+    def agregar_nota(self, id_estudiante, id_asignatura, calificacion):
+        if self.modelo_estudiantes.obtener_estudiante_por_id(id_estudiante) is None:
+            return f"Error: Estudiante con ID {id_estudiante} no existe."
+        if self.modelo_asignaturas.obtener_asignatura_por_id(id_asignatura) is None:
+            return f"Error: Asignatura con ID {id_asignatura} no existe."
         
-        if idAsignatura not in self.asignaturas_modelo.obtener_asignaturas():
-            return f"Error: Asignatura con id {idAsignatura} no existe."
-        
-        self.notas_modelo.agregar_notas(idNota, idEstudiante, idAsignatura, calificacion)
-        return f"Nota con id {idNota} agregada."
+        self.modelo_notas.agregar_nota(id_estudiante, id_asignatura, calificacion)
+        return f"Nota agregada para el estudiante {id_estudiante} en la asignatura {id_asignatura}."
 
-    def modificar_nota(self, idNota, idEstudiante=None, idAsignatura=None, calificacion=None):
-        if idNota not in self.notas_modelo.obtener_notas():
-            return f"Error: Nota con id {idNota} no existe."
-        
-        if idEstudiante is not None and idEstudiante not in self.estudiantes_modelo.obtener_estudiantes():
-            return f"Error: Estudiante con id {idEstudiante} no existe."
-        
-        if idAsignatura is not None and idAsignatura not in self.asignaturas_modelo.obtener_asignaturas():
-            return f"Error: Asignatura con id {idAsignatura} no existe."
+    def modificar_nota(self, id, id_estudiante=None, id_asignatura=None, calificacion=None):
+        if self.modelo_notas.obtener_nota_por_id(id) is None:
+            return f"Error: Nota con ID {id} no existe."
+        if id_estudiante is not None and self.modelo_estudiantes.obtener_estudiante_por_id(id_estudiante) is None:
+            return f"Error: Estudiante con ID {id_estudiante} no existe."
+        if id_asignatura is not None and self.modelo_asignaturas.obtener_asignatura_por_id(id_asignatura) is None:
+            return f"Error: Asignatura con ID {id_asignatura} no existe."
 
-        self.notas_modelo.modificar_nota(idNota, idEstudiante, idAsignatura, calificacion)
-        return f"Nota con id {idNota} modificada."
+        self.modelo_notas.modificar_nota(id, id_estudiante, id_asignatura, calificacion)
+        return f"Nota con ID {id} modificada."
 
-    def eliminar_nota(self, idNota):
-        if idNota not in self.notas_modelo.obtener_notas():
-            return f"Error: Nota con id {idNota} no existe."
+    def eliminar_nota(self, id):
+        if self.modelo_notas.obtener_nota_por_id(id) is None:
+            return f"Error: Nota con ID {id} no existe."
 
-        self.notas_modelo.eliminar_notas(idNota)
-        return f"Nota con id {idNota} eliminada."
+        self.modelo_notas.eliminar_nota(id)
+        return f"Nota con ID {id} eliminada."
 
     def obtener_notas(self):
-        return self.notas_modelo.obtener_notas()
+        notas = self.modelo_notas.obtener_notas()
+        return {nota[0]: {'id_estudiante': nota[1], 'id_asignatura': nota[2], 'calificacion': nota[3]} for nota in notas}
 
+    def obtener_nota_por_id(self, id):
+        nota = self.modelo_notas.obtener_nota_por_id(id)
+        if nota:
+            return {'id': nota[0], 'id_estudiante': nota[1], 'id_asignatura': nota[2], 'calificacion': nota[3]}
+        return None
+
+    def obtener_notas_por_estudiante(self, id_estudiante):
+        notas = self.modelo_notas.obtener_notas_por_estudiante(id_estudiante)
+        return {nota[0]: {'id_estudiante': nota[1], 'id_asignatura': nota[2], 'calificacion': nota[3]} for nota in notas}
+
+    def obtener_notas_por_asignatura(self, id_asignatura):
+        notas = self.modelo_notas.obtener_notas_por_asignatura(id_asignatura)
+        return {nota[0]: {'id_estudiante': nota[1], 'id_asignatura': nota[2], 'calificacion': nota[3]} for nota in notas}

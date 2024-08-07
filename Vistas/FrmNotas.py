@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from Controladores.controlador_notas import ControladorNotas  # Asegúrate de que la importación sea correcta
+from Controladores.controlador_notas import ControladorNotas 
 import re
 
 class InterfazNota:
@@ -19,6 +19,12 @@ class InterfazNota:
         self.boton_limpiar.config(command=self.limpiar_campos)
         self.boton_buscar.config(command=self.buscar_notas)
         self.boton_mostrar_todo.config(command=self.mostrar_todas_notas)
+        
+        # Asignar evento de selección de la tabla
+        self.tabla.bind("<ButtonRelease-1>", self.seleccionar_fila)
+        
+        # Cargar todas las notas al iniciar la interfaz
+        self.mostrar_todas_notas()
 
     def create_data_panel(self):
         datos_frame = tk.Frame(self.frame, bd=4, relief=tk.RIDGE, bg="lightgrey")
@@ -27,8 +33,8 @@ class InterfazNota:
         datos_title = tk.Label(datos_frame, text="Control de Notas", bg="lavender", fg="brown", font=("Arial", 20, "bold"))
         datos_title.grid(row=0, column=0, columnspan=2, pady=20)
 
-        # Campos de entrada
-        self.txt_id_nota = self.crear_campo(datos_frame, "ID Nota", 1)
+        # Campos de entrada (sin ID)
+        self.txt_id = self.crear_campo(datos_frame, "ID", 1, is_disabled=True)  # ID se desactiva ya que es autoincremental
         self.txt_id_estudiante = self.crear_campo(datos_frame, "ID Estudiante", 2)
         self.txt_id_asignatura = self.crear_campo(datos_frame, "ID Asignatura", 3)
         self.txt_calificacion = self.crear_campo(datos_frame, "Calificación", 4)
@@ -55,7 +61,7 @@ class InterfazNota:
         buscar_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
 
         self.combo_buscar = ttk.Combobox(resultados_frame, width=10, font=("Arial", 15), state='readonly')
-        self.combo_buscar['values'] = ("ID Estudiante", "ID Asignatura")
+        self.combo_buscar['values'] = ("ID", "ID Estudiante", "ID Asignatura")
         self.combo_buscar.grid(row=0, column=1, padx=20, pady=10)
 
         self.buscar_entry = tk.Entry(resultados_frame, width=20, font=("Arial", 11), bd=5, relief=tk.GROOVE)
@@ -73,141 +79,134 @@ class InterfazNota:
         scroll_x = tk.Scrollbar(tabla_frame, orient=tk.HORIZONTAL)
         scroll_y = tk.Scrollbar(tabla_frame, orient=tk.VERTICAL)
 
-        self.tabla = ttk.Treeview(tabla_frame, columns=("ID Nota", "ID Estudiante", "ID Asignatura", "Calificación"), xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+        self.tabla = ttk.Treeview(tabla_frame, columns=("ID", "ID Estudiante", "ID Asignatura", "Calificación"), xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
         scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
         scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
         scroll_x.config(command=self.tabla.xview)
         scroll_y.config(command=self.tabla.yview)
 
-        self.tabla.heading("ID Nota", text="ID Nota")
+        self.tabla.heading("ID", text="ID")
         self.tabla.heading("ID Estudiante", text="ID Estudiante")
         self.tabla.heading("ID Asignatura", text="ID Asignatura")
         self.tabla.heading("Calificación", text="Calificación")
         self.tabla.pack(fill=tk.BOTH, expand=1)
 
         self.tabla['show'] = 'headings'
-        self.tabla.column("ID Nota", width=150)
-        self.tabla.column("ID Estudiante", width=150)
-        self.tabla.column("ID Asignatura", width=150)
-        self.tabla.column("Calificación", width=150)
+        self.tabla.column("ID", width=100)
+        self.tabla.column("ID Estudiante", width=100)
+        self.tabla.column("ID Asignatura", width=100)
+        self.tabla.column("Calificación", width=100)
 
         # Configuración de expansión
         resultados_frame.grid_rowconfigure(1, weight=1)
         resultados_frame.grid_columnconfigure(4, weight=1)
 
-    def crear_campo(self, frame, texto, fila, is_text=False, is_combobox=False):
-        label = tk.Label(frame, text=f"{texto}: ", bg="lavender", fg="brown", font=("Arial", 18, "bold"))
-        label.grid(row=fila, column=0, pady=10, sticky="w")
-
-        if is_text:
-            entry = tk.Text(frame, width=30, height=4, font=("Arial", 10))
-        elif is_combobox:
-            entry = ttk.Combobox(frame, width=27, font=("Arial", 15), state='readonly')
-            entry['values'] = ("Masculino", "Femenino", "Otro")
-        else:
-            entry = tk.Entry(frame, font=("Arial", 15), bd=5, relief=tk.GROOVE)
-
-        entry.grid(row=fila, column=1, pady=10, padx=30, sticky="w")
-        return entry
+    def crear_campo(self, parent, label_text, fila, is_disabled=False):
+        label = tk.Label(parent, text=label_text, bg="lightgrey", fg="black", font=("Arial", 14, "bold"))
+        label.grid(row=fila, column=0, pady=5, padx=10, sticky="w")
+        
+        field = tk.Entry(parent, font=("Arial", 13))
+        field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
+        if is_disabled:
+            field.config(state='disabled')
+                
+        return field
     
-    def validar_campos(self):
-        """Validar que los campos no estén vacíos y que los datos sean correctos."""
-        errors = []
-
-        # Validar ID Nota
-        id_nota = self.txt_id_nota.get()
-        if not id_nota:
-            errors.append("El campo ID Nota no puede estar vacío.")
-
-        # Validar ID Estudiante
-        id_estudiante = self.txt_id_estudiante.get()
-        if not id_estudiante:
-            errors.append("El campo ID Estudiante no puede estar vacío.")
-
-        # Validar ID Asignatura
-        id_asignatura = self.txt_id_asignatura.get()
-        if not id_asignatura:
-            errors.append("El campo ID Asignatura no puede estar vacío.")
-
-        # Validar Calificación
-        calificacion = self.txt_calificacion.get()
-        if not calificacion:
-            errors.append("El campo Calificación no puede estar vacío.")
-        elif not calificacion.isdigit():
-            errors.append("La Calificación debe ser un número entero.")
-
-        if errors:
-            self.mostrar_errores(errors)
-            return False
-
-        return True
-
-    def mostrar_errores(self, errores):
-        """Mostrar mensajes de error en una ventana emergente."""
-        error_msg = "\n".join(errores)
-        tk.messagebox.showerror("Errores de validación", error_msg)
-
     def agregar_nota(self):
-        if self.validar_campos():
-            id_nota = self.txt_id_nota.get()
-            id_estudiante = self.txt_id_estudiante.get()
-            id_asignatura = self.txt_id_asignatura.get()
-            calificacion = self.txt_calificacion.get()
-
-            resultado = self.controlador.agregar_nota(id_nota, id_estudiante, id_asignatura, calificacion)
-            tk.messagebox.showinfo("Resultado", resultado)
-            self.limpiar_campos()
+        datos = self.obtener_datos_entrada()
+        if datos:
+            resultado = self.controlador.agregar_nota(*datos)
             self.mostrar_todas_notas()
+            self.limpiar_campos()
+            messagebox.showinfo("Información", resultado)
 
     def modificar_nota(self):
-        if self.validar_campos():
-            id_nota = self.txt_id_nota.get()
-            id_estudiante = self.txt_id_estudiante.get()
-            id_asignatura = self.txt_id_asignatura.get()
-            calificacion = self.txt_calificacion.get()
-
-            resultado = self.controlador.modificar_nota(id_nota, id_estudiante, id_asignatura, calificacion)
-            tk.messagebox.showinfo("Resultado", resultado)
-            self.limpiar_campos()
-            self.mostrar_todas_notas()
+        id_nota = self.txt_id.get()
+        if id_nota:
+            datos = self.obtener_datos_entrada()
+            if datos:
+                resultado = self.controlador.modificar_nota(id_nota, *datos)
+                self.mostrar_todas_notas()
+                self.limpiar_campos()
+                messagebox.showinfo("Información", resultado)
+        else:
+            messagebox.showerror("Error", "Seleccione una nota para modificar")
 
     def eliminar_nota(self):
-        id_nota = self.txt_id_nota.get()
-        if not id_nota:
-            tk.messagebox.showwarning("Advertencia", "El campo ID Nota no puede estar vacío.")
-            return
-        resultado = self.controlador.eliminar_nota(id_nota)
-        tk.messagebox.showinfo("Resultado", resultado)
-        self.mostrar_todas_notas()
+        id_nota = self.txt_id.get()
+        if id_nota:
+            resultado = self.controlador.eliminar_nota(id_nota)
+            self.mostrar_todas_notas()
+            self.limpiar_campos()
+            messagebox.showinfo("Información", resultado)
+        else:
+            messagebox.showerror("Error", "Seleccione una nota para eliminar")
 
     def buscar_notas(self):
-        criterio = self.combo_buscar.get()
-        valor = self.buscar_entry.get()
-        if not valor:
-            tk.messagebox.showwarning("Advertencia", "El campo de búsqueda no puede estar vacío.")
-            return
-        resultados = self.controlador.obtener_notas()
-        resultados_filtrados = {k: v for k, v in resultados.items() if v.get(criterio.lower()) == valor}
-        self.mostrar_resultados(resultados_filtrados)
+        campo_busqueda = self.combo_buscar.get()
+        valor_busqueda = self.buscar_entry.get()
+
+        if campo_busqueda and valor_busqueda:
+            if campo_busqueda == "ID":
+                nota = self.controlador.obtener_nota_por_id(valor_busqueda)
+                if nota:
+                    self.mostrar_resultados({valor_busqueda: nota})
+                else:
+                    self.tabla.delete(*self.tabla.get_children())  # Limpiar tabla si no se encuentra ningún resultado
+                    messagebox.showinfo("Información", "No se encontró ninguna nota con ese ID")
+            elif campo_busqueda == "ID Estudiante":
+                notas = self.controlador.obtener_notas_por_estudiante(valor_busqueda)
+                self.mostrar_resultados(notas)
+            elif campo_busqueda == "ID Asignatura":
+                notas = self.controlador.obtener_notas_por_asignatura(valor_busqueda)
+                self.mostrar_resultados(notas)
+        else:
+            messagebox.showwarning("Advertencia", "Seleccione un criterio de búsqueda y proporcione un valor")
 
     def mostrar_todas_notas(self):
-        resultados = self.controlador.obtener_notas()
-        self.mostrar_resultados(resultados)
-
-    def mostrar_resultados(self, resultados):
-        for row in self.tabla.get_children():
-            self.tabla.delete(row)
-
-        for id_nota, datos in resultados.items():
-            self.tabla.insert("", tk.END, values=(
-                id_nota,
-                datos['id_estudiante'],
-                datos['id_asignatura'],
-                datos['calificacion']
-            ))
+        notas = self.controlador.obtener_notas()
+        self.mostrar_resultados(notas)
 
     def limpiar_campos(self):
-        self.txt_id_nota.delete(0, tk.END)
+        self.txt_id.config(state='normal')
+        self.txt_id.delete(0, tk.END)
+        self.txt_id.config(state='disabled')
         self.txt_id_estudiante.delete(0, tk.END)
         self.txt_id_asignatura.delete(0, tk.END)
         self.txt_calificacion.delete(0, tk.END)
+
+    def obtener_datos_entrada(self):
+        id_estudiante = self.txt_id_estudiante.get()
+        id_asignatura = self.txt_id_asignatura.get()
+        calificacion = self.txt_calificacion.get()
+
+        if not id_estudiante or not id_asignatura or not calificacion:
+            messagebox.showwarning("Advertencia", "Todos los campos son obligatorios")
+            return None
+
+        try:
+            calificacion = float(calificacion)
+        except ValueError:
+            messagebox.showerror("Error", "La calificación debe ser un número")
+            return None
+
+        return id_estudiante, id_asignatura, calificacion
+
+    def mostrar_resultados(self, notas):
+        self.tabla.delete(*self.tabla.get_children())
+        for id_nota, datos in notas.items():
+            self.tabla.insert("", tk.END, values=(id_nota, datos['id_estudiante'], datos['id_asignatura'], datos['calificacion']))
+
+    def seleccionar_fila(self, event):
+        item = self.tabla.selection()[0]
+        datos = self.tabla.item(item, 'values')
+        self.txt_id.config(state='normal')
+        self.txt_id.delete(0, tk.END)
+        self.txt_id.insert(0, datos[0])
+        self.txt_id.config(state='disabled')
+        self.txt_id_estudiante.delete(0, tk.END)
+        self.txt_id_estudiante.insert(0, datos[1])
+        self.txt_id_asignatura.delete(0, tk.END)
+        self.txt_id_asignatura.insert(0, datos[2])
+        self.txt_calificacion.delete(0, tk.END)
+        self.txt_calificacion.insert(0, datos[3])
