@@ -141,28 +141,6 @@ class InterfazEstudiante:
                 
         return field
     
-    def crear_campo(self, parent, label_text, fila, is_disabled=False, is_text=False, is_combobox=False, is_date=False):
-        label = tk.Label(parent, text=label_text, bg="lightgrey", fg="black", font=("Arial", 14, "bold"))
-        label.grid(row=fila, column=0, pady=5, padx=10, sticky="w")
-        
-        if is_combobox:
-            field = ttk.Combobox(parent, font=("Arial", 13), state="readonly")
-            field['values'] = ("Masculino", "Femenino", "Otro")
-            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
-        elif is_text:
-            field = tk.Text(parent, height=4, width=25, font=("Arial", 13))
-            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
-        elif is_date:
-            field = DateEntry(parent, font=("Arial", 13), date_pattern="yyyy-mm-dd")
-            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
-        else:
-            field = tk.Entry(parent, font=("Arial", 13))
-            field.grid(row=fila, column=1, pady=5, padx=10, sticky="w")
-            if is_disabled:
-                field.config(state='disabled')
-                
-        return field
-    
     def agregar_estudiante(self):
         datos = self.obtener_datos_entrada()
         if datos:
